@@ -1,0 +1,94 @@
+import random
+
+def obtener_palabra_al_azar():
+    palabras = ["Hogwarts", "Gryffindor", "Slytherin", "Hufflepuff", "Ravenclaw",
+                "Quidditch", "Muggle", "Wizard", "Witch", "Dumbledore",
+                "Voldemort", "Dementor", "Patronus", "Polyjuice", "Horcrux",
+                "Expelliarmus", "Accio", "Lumos", "Gringotts", "Azkaban"]
+    return random.choice(palabras)
+
+def inicializar_palabra_oculta(palabra):
+    return ["- " if letra.isalpha() else letra for letra in palabra]
+
+def mostrar_palabra_oculta(palabra_oculta):
+    return "".join(palabra_oculta)
+
+def obtener_caracteristicas_casa(casa):
+    casas_caracteristicas = {
+        "gryffindor": ["valentía", "audacia"],
+        "slytherin": ["astucia", "ambición"],
+        "hufflepuff": ["lealtad", "diligencia"],
+        "ravenclaw": ["inteligencia", "creatividad"],
+        "thunderbird": ["intrépidos", "audacia"],
+        "wampus": ["determinación"],
+        "horned serpent": ["sabiduría"],
+        "pukwudgie": ["compasión"],
+        "beauxbatons": ["elegancia", "sofisticación"],
+        "durmstrang": ["disciplina", "tenacidad"]
+    }
+
+    casa_lower = casa.lower()
+    if casa_lower in casas_caracteristicas:
+        return casas_caracteristicas[casa_lower]
+    else:
+        return None
+
+def mostrar_mensaje_casa(caracteristicas, nombre_usuario):
+    if caracteristicas:
+        sustantivos = ' y '.join(caracteristicas)
+        mensaje = f"¡{nombre_usuario.capitalize()}, esperamos ver tu {sustantivos} en este juego!"
+    else:
+        mensaje = "¡No esperábamos encontrar un Muggle aquí, buena suerte!"
+
+    print(mensaje)
+
+def jugar_adivina_la_palabra():
+    nombre_usuario = input("¡Bienvenido a Adivina la Palabra! ¿Cuál es tu nombre? ").capitalize()
+
+    casa_usuario = input(f"{nombre_usuario}, ¿Cuál es tu casa? ").capitalize()
+
+    caracteristicas_casa = obtener_caracteristicas_casa(casa_usuario)
+
+    if caracteristicas_casa:
+        mostrar_mensaje_casa(caracteristicas_casa, nombre_usuario)
+    else:
+        print("\n¡No esperábamos encontrar un Muggle aquí, buena suerte!")
+
+    palabra_secreta = obtener_palabra_al_azar()
+    palabra_oculta = inicializar_palabra_oculta(palabra_secreta)
+    vidas = 7
+    letras_incorrectas = []
+
+    while True:
+        print(f"\nPalabra: {mostrar_palabra_oculta(palabra_oculta)}")
+        print(f"Letras incorrectas: {', '.join(letras_incorrectas)}")
+        print(f"Vidas restantes: {vidas}")
+
+        letra_usuario = input("Ingresa una letra: ")
+
+        if not letra_usuario.isalpha() or len(letra_usuario) != 1:
+            print("Por favor, ingresa una letra válida.")
+            continue
+
+        letra_usuario = letra_usuario.lower()
+
+        if letra_usuario in palabra_secreta.lower():
+            print("¡Correcto! La letra está en la palabra.")
+            for i, letra in enumerate(palabra_secreta):
+                if letra.lower() == letra_usuario:
+                    palabra_oculta[i] = letra + " "
+        else:
+            print(f"¡Incorrecto! ¡Un punto menos para, {casa_usuario}!")
+            letras_incorrectas.append(letra_usuario)
+            vidas -= 1
+
+        if vidas == 0:
+            print(f"\n¡Buena suerte la próxima, muggle! La palabra era: {palabra_secreta}")
+            break
+
+        if "".join(palabra_oculta).replace(" ", "").lower() == palabra_secreta.lower():
+            print(f"\n¡You're a wizard, {nombre_usuario}! Has adivinado la palabra: {palabra_secreta}")
+            break
+
+if __name__ == "__main__":
+    jugar_adivina_la_palabra()
