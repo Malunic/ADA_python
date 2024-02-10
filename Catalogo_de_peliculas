@@ -1,88 +1,109 @@
 import os
 
-# Definición de la clase Pelicula
 class Pelicula:
-    def __init__(self, nombre, director, genero, duracion, actores):
-        self.nombre = nombre.lower()
-        self.director = director.lower() if director is not None else None
+    def __init__(self, titulo, director, genero, duracion, actores=None):
+        self._titulo = titulo
+        self.director = director
         self.genero = genero
         self.duracion = duracion
-        self.actores = [actor.lower() for actor in actores]
+        self.actores = actores if actores else []
 
     def __str__(self):
-        return f"Nombre: {self.nombre}\nDirector: {self.director}\nGénero: {self.genero}\nDuración: {self.duracion} minutos\nActores principales: {', '.join(self.actores)}"
+        actores_str = ", ".join(self.actores) if self.actores else "Desconocido"
+        return f"Título: {self._titulo}, Director: {self.director}, Género: {self.genero}, Duración: {self.duracion} minutos, Actores: {actores_str}"
 
-# Definición de la clase CatalogoPelicula
-class CatalogoPelicula:
+class CatalogoPeliculas:
     def __init__(self, nombre):
         self.nombre = nombre
         self.ruta_archivo = f"{nombre}.txt"
+        self.peliculas = []
 
-    def agregar(self, pelicula):
-        if not self.pelicula_existe(pelicula.nombre):
-            with open(self.ruta_archivo, 'a') as archivo:
-                archivo.write(f"{pelicula}\n")
-            print(f"Se ha agregado la película {pelicula.nombre} al catálogo.")
-        else:
-            print("¡La película ya está en el catálogo!")
-
-    def pelicula_existe(self, nombre_pelicula):
         if os.path.exists(self.ruta_archivo):
             with open(self.ruta_archivo, 'r') as archivo:
-                peliculas = archivo.readlines()
-                for pelicula in peliculas:
-                    if nombre_pelicula.lower() in pelicula.lower():
-                        return True
-        return False
+                for linea in archivo:
+                    datos = linea.strip().split(',')
+                    if len(datos) >= 4:
+                        actores = datos[4:]
+                        pelicula = Pelicula(datos[0], datos[1], datos[2], datos[3], actores)
+                        self.peliculas.append(pelicula)
+                    else:
+                        print("Error: La línea del archivo no contiene la cantidad correcta de elementos.")
 
-    def listar(self):
-        if os.path.exists(self.ruta_archivo):
-            with open(self.ruta_archivo, 'r') as archivo:
-                peliculas = archivo.readlines()
-                if peliculas:
-                    print("Películas en el catálogo:")
-                    for idx, pelicula in enumerate(peliculas, start=1):
-                        print(f"{idx}. {pelicula.strip()}")
-                    print("\n¿Desea ver la información de alguna película? (s/n): ")
-                    respuesta = input()
-                    if respuesta.lower() == 's':
-                        self.ver_informacion_pelicula(peliculas)
+    def agregar_pelicula(self, pelicula):
+        self.peliculas.append(pelicula)
+        with open(self.ruta_archivo, 'a') as archivo:
+            actores_str = ", ".join(pelicula.actores) if pelicula.actores else "Desconocido"
+            archivo.write(f"{pelicula._titulo},{pelicula.director},{pelicula.genero},{pelicula.duracion},{actores_str}\n")
+
+    def listar_peliculas(self):
+        print(f"Catálogo de películas '{self.nombre}':")
+        for i, pelicula in enumerate(self.peliculas, 1):
+            print(f"{i}. {pelicula}")
+
+        print("\nSeleccione el número de la película que desea editar o borrar.")
+        print("Escriba 'e' para editar, 'b' para borrar o '0' para volver al menú principal.")
+        num_pelicula = input("Número de película: ")
+        if num_pelicula.isdigit():
+            num_pelicula = int(num_pelicula)
+            if 0 < num_pelicula <= len(self.peliculas):
+                accion = input("¿Desea editar (e) o borrar (b) la película seleccionada?: ").lower()
+                if accion == "e":
+                    self.editar_pelicula(num_pelicula)
+                elif accion == "b":
+                    self.eliminar_pelicula(num_pelicula)
                 else:
-                    print("El catálogo está vacío.")
+                    print("Acción no válida.")
+            elif num_pelicula == 0:
+                return
+            else:
+                print("Número de película no válido.")
         else:
-            print("El catálogo no existe.")
+            print("Por favor, ingrese un número válido.")
 
-    def ver_informacion_pelicula(self, peliculas):
-        num_pelicula = int(input("Indique el número de la película: "))
-        pelicula_seleccionada = peliculas[num_pelicula - 1].strip().split('\n')
-        print("\nInformación de la película seleccionada:")
-        for dato in pelicula_seleccionada:
-            print(dato)
-        print("\n¿Desea editar la información de alguna película? (s/n): ")
-        respuesta = input()
-        if respuesta.lower() == 's':
-            self.editar_pelicula(num_pelicula, peliculas)
+    def editar_pelicula(self, num_pelicula):
+        pelicula = self.peliculas[num_pelicula - 1]
+        print(f"\nEditando la película {pelicula._titulo}:")
+        nuevo_titulo = input(f"Nuevo título ({pelicula._titulo}): ")
+        pelicula._titulo = nuevo_titulo if nuevo_titulo else pelicula._titulo
+        nuevo_director = input(f"Nuevo director ({pelicula.director}): ")
+        pelicula.director = nuevo_director if nuevo_director else pelicula.director
+        nuevo_genero = input(f"Nuevo género ({pelicula.genero}): ")
+        pelicula.genero = nuevo_genero if nuevo_genero else pelicula.genero
+        nueva_duracion = input(f"Nueva duración ({pelicula.duracion} minutos): ")
+        pelicula.duracion = nueva_duracion if nueva_duracion else pelicula.duracion
+        nueva_lista_actores = input(f"Nueva lista de actores ({', '.join(pelicula.actores)}): ")
+        actores = nueva_lista_actores.split(",")[:2]  # Seleccionamos hasta 2 actores
+        pelicula.actores = [actor.strip() for actor in actores]
+        print("Película editada correctamente.")
 
-    def editar_pelicula(self, num_pelicula, peliculas):
-        print("Entendido, indique qué dato desea modificar:")
-        print("1. Nombre de película")
-        print("2. Director")
-        print("3. Género")
-        print("4. Duración (en minutos)")
-        print("5. Actores")
-        dato_a_modificar = int(input())
-        nuevo_valor = input("Ingrese el nuevo valor: ")
-        peliculas[num_pelicula - 1] = f"{nuevo_valor}\n"
-        with open(self.ruta_archivo, 'w') as archivo:
-            archivo.writelines(peliculas)
-        print("Cambios guardados.")
+    def eliminar_pelicula(self, num_pelicula):
+        pelicula = self.peliculas.pop(num_pelicula - 1)
+        print(f"Se ha borrado la película '{pelicula._titulo}'.")
 
-    def eliminar(self):
-        if os.path.exists(self.ruta_archivo):
-            os.remove(self.ruta_archivo)
-            print(f"Se ha eliminado el catálogo {self.nombre}.")
+    def eliminar_catalogo(self):
+        os.remove(self.ruta_archivo)
+        self.peliculas = []
+        print(f"El catálogo de películas '{self.nombre}' ha sido eliminado.")
+
+    # Método para obtener la lista de actores
+    def obtener_actores(self):
+        agregar_actores = input("¿Desea agregar actores a la película? (s/n): ")
+        if agregar_actores.lower() == "s":
+            actores = []
+            for i in range(2):
+                actor = input(f"Ingrese nombre del actor {i+1} (o presione Enter para omitir): ")
+                if actor:
+                    actores.append(actor)
+            return actores
         else:
-            print("El catálogo no existe.")
+            return []
+
+def mostrar_menu():
+    print("\nMenú:")
+    print("1. Agregar Película")
+    print("2. Listar Películas")
+    print("3. Eliminar catálogo películas")
+    print("4. Salir")
 
 # Función para obtener el género favorito del usuario y mostrar la frase correspondiente
 def obtener_frase_genero(genero_favorito):
@@ -123,46 +144,34 @@ def main():
 
     print(obtener_frase_genero(genero_favorito))
 
-    catalogo = CatalogoPelicula(nombre_catalogo)
+    catalogo = CatalogoPeliculas(nombre_catalogo)
 
     while True:
-        print("\nMenú de opciones:")
-        print("1. Agregar Película")
-        print("2. Listar Películas")
-        print("3. Eliminar catálogo de películas")
-        print("4. Salir")
-
+        mostrar_menu()
         opcion = input("Seleccione una opción: ")
 
-        if opcion == '1':
-            nombre_pelicula = input("Nombre de Película: ")
+        if opcion == "1":
+            print("Ingrese los datos de la película:")
+            titulo = input("Título: ")
             print("Si no conoce la siguiente información, presione Enter ya que no es obligatoria")
             director = input("Director: ")
             genero = input("Género: ")
-            duracion = input("Duración: ")
-            actores = []
-            agregar_actores = input("¿Desea agregar actores principales? (s/n): ")
-            while agregar_actores.lower() == 's' and len(actores) < 4:
-                actor = input(f"Actor {len(actores) + 1}: ")
-                actores.append(actor)
-                agregar_actores = input("¿Desea agregar otro actor? (s/n): ")
-
-            pelicula = Pelicula(nombre_pelicula, director, genero, duracion, actores)
-            catalogo.agregar(pelicula)
-
-        elif opcion == '2':
-            catalogo.listar()
-
-        elif opcion == '3':
-            catalogo.eliminar()
-            break
-
-        elif opcion == '4':
+            duracion = input("Duración (minutos): ")
+            actores = catalogo.obtener_actores()
+            pelicula = Pelicula(titulo, director, genero, duracion, actores)
+            catalogo.agregar_pelicula(pelicula)
+        elif opcion == "2":
+            catalogo.listar_peliculas()
+        elif opcion == "3":
+            confirmacion = input("¿Está seguro que desea eliminar el catálogo de películas? (s/n): ")
+            if confirmacion.lower() == "s":
+                catalogo.eliminar_catalogo()
+                break
+        elif opcion == "4":
             print("Gracias por visitar tu catálogo de películas. ¡Nos vemos!")
             break
-
         else:
-            print("Opción no válida. Intente nuevamente.")
+            print("Opción no válida. Por favor, seleccione una opción válida.")
 
 if __name__ == "__main__":
     main()
